@@ -1,6 +1,7 @@
 package cn.diviniti.toarunophotostool;
 
 import android.app.Activity;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.Button;
 import android.view.SurfaceView;
@@ -11,7 +12,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.content.pm.ActivityInfo;
 import android.view.View;
-import android.hardware.Camera.ShutterCallback;
 import android.hardware.Camera.PictureCallback;
 import android.os.Environment;
 
@@ -19,6 +19,7 @@ import java.io.File;
 
 import android.text.format.DateFormat;
 
+import java.security.Policy;
 import java.util.Date;
 
 import android.graphics.Bitmap;
@@ -26,6 +27,7 @@ import android.graphics.BitmapFactory;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.util.List;
 import java.util.Timer;
 
 import android.os.Handler;
@@ -54,6 +56,7 @@ public class TakeCamera extends Activity implements SurfaceHolder.Callback {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);//窗口去掉标题
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);//窗口设置为全屏
+        this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);//设置不熄屏
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);// 调用setRequestedOrientation来翻转Preview
         this.setContentView(R.layout.camera);
 
@@ -119,7 +122,6 @@ public class TakeCamera extends Activity implements SurfaceHolder.Callback {
             if (camera != null) {
 //当按下按钮时，执行相机对象的takePicture()方法，该方法有三个回调函数作为入参，不需要时可以设为null
                 camera.takePicture(null, null, jpegCallback);
-                changeByTime(5000);//调用延迟方法，5秒后重新预览拍照
             }
         }
         return super.onKeyDown(keyCode, event);
@@ -136,13 +138,19 @@ public class TakeCamera extends Activity implements SurfaceHolder.Callback {
         try {
             Camera.Parameters parameters = camera.getParameters();//获取相机参数对象
             parameters.setPictureFormat(PixelFormat.JPEG);//设置格式
-//设置预览大小
-            parameters.setPreviewSize(480, 320);
-//设置自动对焦
+            //设置自动对焦
             parameters.setFocusMode("auto");
-//设置图片保存时的分辨率大小
+            //设置图片保存时的分辨率大小
             parameters.setPictureSize(2048, 1536);
+            //MX2 夜间模式，虽然设置不上
+            parameters.setSceneMode("night-shot");
+
             camera.setParameters(parameters);//给相机对象设置刚才设定的参数
+            Camera.Parameters te = camera.getParameters();
+            List<String> list = te.getSupportedSceneModes();
+            for (String item : list) {
+                Log.d("VANGO_DEBUG", item);
+            }
             camera.setPreviewDisplay(surfaceHolder);//设置用SurfaceView作为承载镜头取景画面的显示
             camera.startPreview();//开始预览
             previewRunning = true;//设置预览状态为true
